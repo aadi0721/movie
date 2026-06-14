@@ -100,10 +100,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Header />
-      <main className="min-h-screen pt-0">
+      <main className="min-h-screen w-full pt-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={pathname}
+            className="w-full"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
