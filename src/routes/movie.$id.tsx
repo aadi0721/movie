@@ -1,11 +1,8 @@
-// FULL REWRITE: src/routes/movie.$id.tsx
-// Matches the MoviesAlert Interstellar UI from screenshot exactly
-
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar, Clock, Download, Play, Plus, Share2, Star,
+  Calendar, Clock, Download, Play, Plus, Star,
   Trophy, Eye, Heart, ChevronRight, ChevronLeft,
   Check, Flame
 } from "lucide-react";
@@ -72,8 +69,8 @@ function MovieDetails() {
 
   if (isLoading || !data) {
     return (
-      <div className="min-h-screen pt-24 px-10">
-        <div className="animate-pulse space-y-6 max-w-[1600px] mx-auto">
+      <div className="min-h-screen pt-24 px-6 lg:px-10">
+        <div className="animate-pulse space-y-6">
           <div className="h-[60vh] bg-surface rounded-2xl" />
           <div className="h-8 bg-surface rounded w-1/3" />
           <div className="h-4 bg-surface rounded w-2/3" />
@@ -90,7 +87,6 @@ function MovieDetails() {
   const writers = data.credits?.crew.filter((c: any) => c.job === "Screenplay" || c.job === "Writer").slice(0, 2) ?? [];
   const stars = data.credits?.cast.slice(0, 3) ?? [];
   const languages = data.spoken_languages?.map((l: any) => l.english_name) ?? [];
-  const trailer = data.videos?.results.find((v: any) => v.site === "YouTube" && (v.type === "Trailer" || v.type === "Teaser"));
   const voteAvg = data.vote_average?.toFixed(1) ?? "—";
   const voteCount = data.vote_count ? `${(data.vote_count / 1000).toFixed(1)}K` : "—";
   const releaseDate = data.release_date ? new Date(data.release_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
@@ -106,9 +102,8 @@ function MovieDetails() {
 
   return (
     <div className="pb-20 min-h-screen">
-      {/* ─── HERO SECTION ─── */}
+      {/* HERO */}
       <section className="relative min-h-screen overflow-hidden">
-        {/* Full bleed backdrop */}
         {data.backdrop_path && (
           <img
             src={backdropUrl(data.backdrop_path, "original") ?? ""}
@@ -116,13 +111,11 @@ function MovieDetails() {
             className="absolute inset-0 w-full h-full object-cover object-top"
           />
         )}
-        {/* Cinematic gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/20" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-transparent" />
 
-        {/* Content wrapper — min-h-screen so it always fills the section height */}
-        <div className="relative min-h-screen w-full mx-auto max-w-[1600px] px-6 lg:px-10 pt-28 pb-16 flex flex-col md:flex-row gap-10 items-end md:items-center">
+        <div className="absolute inset-0 w-full px-6 lg:px-10 pt-28 pb-16 flex flex-col md:flex-row gap-10 items-end md:items-center">
           {/* Poster */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -134,7 +127,6 @@ function MovieDetails() {
               {data.poster_path && (
                 <img src={posterUrl(data.poster_path, "w500") ?? ""} alt={title} className="w-full h-full object-cover" />
               )}
-              {/* Play overlay */}
               <Link
                 to="/watch/$id"
                 params={{ id }}
@@ -157,7 +149,6 @@ function MovieDetails() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="flex-1 min-w-0"
           >
-            {/* Quality badges */}
             <div className="flex flex-wrap gap-2 mb-4">
               {["4K UHD", "HDR10+", "Dolby Vision"].map((badge) => (
                 <span key={badge} className="px-2.5 py-0.5 text-xs font-semibold rounded border border-white/25 bg-white/10 text-white/90 tracking-wide">
@@ -166,20 +157,12 @@ function MovieDetails() {
               ))}
             </div>
 
-            {/* Title or logo */}
             {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt={title}
-                className="h-12 md:h-16 lg:h-20 w-auto object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)]"
-              />
+              <img src={logoUrl} alt={title} className="h-12 md:h-16 lg:h-20 w-auto object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)]" />
             ) : (
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-none text-white">
-                {title}
-              </h1>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-none text-white">{title}</h1>
             )}
 
-            {/* Meta line */}
             <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-white/60">
               <span className="text-white/80 font-medium">{year}</span>
               {runtime && <><span>•</span><span>{runtime}</span></>}
@@ -194,52 +177,22 @@ function MovieDetails() {
               )}
             </div>
 
-            {/* Overview */}
-            <p className="mt-5 max-w-2xl text-sm md:text-base text-white/65 leading-relaxed line-clamp-3">
-              {data.overview}
-            </p>
+            <p className="mt-5 max-w-2xl text-sm md:text-base text-white/65 leading-relaxed line-clamp-3">{data.overview}</p>
 
-            {/* Rating cards row */}
             <div className="mt-6 flex flex-wrap gap-3">
-              <RatingCard
-                icon={<Star className="size-4 fill-yellow-400 text-yellow-400" />}
-                score={voteAvg}
-                label="IMDb"
-                sublabel="/10"
-              />
-              <RatingCard
-                icon={<span className="text-red-500 text-base">🍅</span>}
-                score={data.vote_average ? `${Math.round(data.vote_average * 10)}%` : "—"}
-                label="Tomatometer"
-              />
-              <RatingCard
-                icon={<Eye className="size-4 text-blue-400" />}
-                score={voteCount}
-                label="Votes"
-              />
+              <RatingCard icon={<Star className="size-4 fill-yellow-400 text-yellow-400" />} score={voteAvg} label="IMDb" sublabel="/10" />
+              <RatingCard icon={<span className="text-red-500 text-base">🍅</span>} score={data.vote_average ? `${Math.round(data.vote_average * 10)}%` : "—"} label="Tomatometer" />
+              <RatingCard icon={<Eye className="size-4 text-blue-400" />} score={voteCount} label="Votes" />
             </div>
 
-            {/* Action buttons */}
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                to="/watch/$id"
-                params={{ id }}
-                className="flex items-center gap-2.5 px-7 py-3 rounded-xl bg-gradient-primary text-white font-semibold shadow-glow hover:scale-105 transition-transform text-sm"
-              >
+              <Link to="/watch/$id" params={{ id }} className="flex items-center gap-2.5 px-7 py-3 rounded-xl bg-gradient-primary text-white font-semibold shadow-glow hover:scale-105 transition-transform text-sm">
                 <Play className="size-4 fill-white" /> Play Movie
               </Link>
-              <button
-                onClick={() => toggleWatchlist.mutate()}
-                className="flex items-center gap-2.5 px-5 py-3 rounded-xl glass-strong font-medium hover:bg-secondary transition text-sm text-white"
-              >
-                {watchlist.data ? <Check className="size-4 text-primary-glow" /> : <Plus className="size-4" />}
-                My List
+              <button onClick={() => toggleWatchlist.mutate()} className="flex items-center gap-2.5 px-5 py-3 rounded-xl glass-strong font-medium hover:bg-secondary transition text-sm text-white">
+                {watchlist.data ? <Check className="size-4 text-primary-glow" /> : <Plus className="size-4" />} My List
               </button>
-              <Link
-                to="/download/$id"
-                params={{ id }}
-                className="flex items-center gap-2.5 px-5 py-3 rounded-xl glass-strong font-medium hover:bg-secondary transition text-sm text-white"
-              >
+              <Link to="/download/$id" params={{ id }} className="flex items-center gap-2.5 px-5 py-3 rounded-xl glass-strong font-medium hover:bg-secondary transition text-sm text-white">
                 <Download className="size-4" /> Download
               </Link>
             </div>
@@ -247,9 +200,9 @@ function MovieDetails() {
         </div>
       </section>
 
-      {/* ─── TABS ─── */}
+      {/* TABS */}
       <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="mx-auto max-w-[1600px] px-6 lg:px-10">
+        <div className="w-full px-6 lg:px-10">
           <div className="flex gap-1 overflow-x-auto scrollbar-none">
             {TABS.map((tab) => (
               <button
@@ -261,11 +214,7 @@ function MovieDetails() {
               >
                 {tab}
                 {activeTab === tab && (
-                  <motion.div
-                    layoutId="tab-indicator"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-primary rounded-full"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
+                  <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-primary rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
                 )}
               </button>
             ))}
@@ -273,26 +222,15 @@ function MovieDetails() {
         </div>
       </div>
 
-      {/* ─── TAB CONTENT ─── */}
-      <div className="mx-auto max-w-[1600px] px-6 lg:px-10 mt-8">
+      {/* TAB CONTENT */}
+      <div className="w-full px-6 lg:px-10 mt-8">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            {/* OVERVIEW TAB */}
+          <motion.div key={activeTab} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+
             {activeTab === "Overview" && (
               <div className="grid lg:grid-cols-[1fr_340px] gap-8">
                 <div className="space-y-8">
-                  {/* Full overview */}
-                  <div>
-                    <p className="text-base text-muted-foreground leading-relaxed">{data.overview}</p>
-                  </div>
-
-                  {/* Details grid */}
+                  <p className="text-base text-muted-foreground leading-relaxed">{data.overview}</p>
                   <div className="space-y-3">
                     <DetailRow label="Director" value={director?.name ?? "—"} />
                     {writers.length > 0 && <DetailRow label="Writers" value={writers.map((w: any) => w.name).join(", ")} />}
@@ -301,8 +239,6 @@ function MovieDetails() {
                     <DetailRow label="Release Date" value={releaseDate} />
                   </div>
                 </div>
-
-                {/* Sidebar info */}
                 <div className="space-y-3">
                   {[
                     { label: "IMDb Rating", value: `${voteAvg}/10`, icon: <Star className="size-4 fill-yellow-400 text-yellow-400" /> },
@@ -322,18 +258,13 @@ function MovieDetails() {
               </div>
             )}
 
-            {/* CAST TAB */}
             {activeTab === "Cast" && (
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-white">Top Cast</h2>
                   <div className="flex gap-2">
-                    <button onClick={() => scrollCast("left")} className="p-2 glass rounded-lg hover:bg-surface-elevated transition">
-                      <ChevronLeft className="size-5" />
-                    </button>
-                    <button onClick={() => scrollCast("right")} className="p-2 glass rounded-lg hover:bg-surface-elevated transition">
-                      <ChevronRight className="size-5" />
-                    </button>
+                    <button onClick={() => scrollCast("left")} className="p-2 glass rounded-lg hover:bg-surface-elevated transition"><ChevronLeft className="size-5" /></button>
+                    <button onClick={() => scrollCast("right")} className="p-2 glass rounded-lg hover:bg-surface-elevated transition"><ChevronRight className="size-5" /></button>
                   </div>
                 </div>
                 <div ref={castRef} className="flex gap-4 overflow-x-auto scrollbar-none pb-4">
@@ -341,12 +272,7 @@ function MovieDetails() {
                     <div key={c.id} className="shrink-0 w-[140px] glass rounded-2xl p-3 text-center">
                       <div className="w-20 h-20 rounded-full overflow-hidden bg-surface mx-auto border-2 border-border">
                         {c.profile_path ? (
-                          <img
-                            src={`https://image.tmdb.org/t/p/w185${c.profile_path}`}
-                            alt={c.name}
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={`https://image.tmdb.org/t/p/w185${c.profile_path}`} alt={c.name} loading="lazy" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-2xl bg-surface-elevated">👤</div>
                         )}
@@ -359,7 +285,6 @@ function MovieDetails() {
               </div>
             )}
 
-            {/* DOWNLOADS TAB */}
             {activeTab === "Downloads" && (
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Download Options</h2>
@@ -380,23 +305,16 @@ function MovieDetails() {
                           <span className="text-xs px-2 py-0.5 rounded bg-surface-elevated text-muted-foreground">{item.size}</span>
                         </div>
                       </div>
-                      <Link
-                        to="/download/$id"
-                        params={{ id }}
-                        className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-primary text-white text-sm font-semibold shadow-glow hover:scale-105 transition-transform"
-                      >
+                      <Link to="/download/$id" params={{ id }} className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-primary text-white text-sm font-semibold shadow-glow hover:scale-105 transition-transform">
                         <Download className="size-4" /> Download
                       </Link>
                     </div>
                   ))}
-                  <p className="text-xs text-muted-foreground mt-4">
-                    Links sourced automatically. Report broken links via the Share button.
-                  </p>
+                  <p className="text-xs text-muted-foreground mt-4">Links sourced automatically. Report broken links via the Share button.</p>
                 </div>
               </div>
             )}
 
-            {/* GALLERY TAB */}
             {activeTab === "Gallery" && (
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Gallery</h2>
@@ -404,12 +322,7 @@ function MovieDetails() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {data.images.backdrops.slice(0, 12).map((img: any, i: number) => (
                       <div key={i} className="aspect-video rounded-xl overflow-hidden border border-border">
-                        <img
-                          src={`https://image.tmdb.org/t/p/w780${img.file_path}`}
-                          alt={`${title} still ${i + 1}`}
-                          loading="lazy"
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                        />
+                        <img src={`https://image.tmdb.org/t/p/w780${img.file_path}`} alt={`${title} still ${i + 1}`} loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                       </div>
                     ))}
                   </div>
@@ -419,7 +332,6 @@ function MovieDetails() {
               </div>
             )}
 
-            {/* REVIEWS TAB */}
             {activeTab === "Reviews" && (
               <div>
                 <h2 className="text-xl font-semibold text-white mb-6">Reviews</h2>
@@ -428,15 +340,11 @@ function MovieDetails() {
                     {data.reviews.results.slice(0, 5).map((review: any) => (
                       <div key={review.id} className="glass rounded-2xl p-6">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center text-sm font-bold text-white">
-                            {review.author[0].toUpperCase()}
-                          </div>
+                          <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center text-sm font-bold text-white">{review.author[0].toUpperCase()}</div>
                           <div>
                             <div className="text-sm font-semibold text-white">{review.author}</div>
                             {review.author_details?.rating && (
-                              <div className="text-xs text-yellow-400 flex items-center gap-1">
-                                <Star className="size-3 fill-yellow-400" /> {review.author_details.rating}/10
-                              </div>
+                              <div className="text-xs text-yellow-400 flex items-center gap-1"><Star className="size-3 fill-yellow-400" /> {review.author_details.rating}/10</div>
                             )}
                           </div>
                         </div>
@@ -450,31 +358,27 @@ function MovieDetails() {
               </div>
             )}
 
-            {/* SIMILAR TAB */}
             {activeTab === "Similar" && (
               <div>
                 {data.similar?.results?.length > 0 && (
                   <ContentRow title="More Like This">
-                    {data.similar.results.slice(0, 18).map((m: any, i: number) => (
-                      <MovieCard key={m.id} movie={m} index={i} />
-                    ))}
+                    {data.similar.results.slice(0, 18).map((m: any, i: number) => <MovieCard key={m.id} movie={m} index={i} />)}
                   </ContentRow>
                 )}
                 {data.recommendations?.results?.length > 0 && (
                   <ContentRow title="Recommended For You">
-                    {data.recommendations.results.slice(0, 18).map((m: any, i: number) => (
-                      <MovieCard key={m.id} movie={m} index={i} />
-                    ))}
+                    {data.recommendations.results.slice(0, 18).map((m: any, i: number) => <MovieCard key={m.id} movie={m} index={i} />)}
                   </ContentRow>
                 )}
               </div>
             )}
+
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* ─── STATS BAR ─── */}
-      <div className="mx-auto max-w-[1600px] px-6 lg:px-10 mt-16">
+      {/* STATS BAR */}
+      <div className="w-full px-6 lg:px-10 mt-16">
         <div className="glass rounded-2xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border overflow-hidden">
           {[
             { icon: <Eye className="size-5 text-blue-400" />, value: "184K", label: "Watching Now" },
@@ -496,18 +400,13 @@ function MovieDetails() {
   );
 }
 
-// ─── SUB COMPONENTS ───
-
-function RatingCard({ icon, score, label, sublabel }: {
-  icon: React.ReactNode; score: string; label: string; sublabel?: string;
-}) {
+function RatingCard({ icon, score, label, sublabel }: { icon: React.ReactNode; score: string; label: string; sublabel?: string }) {
   return (
     <div className="glass rounded-xl px-4 py-3 flex items-center gap-3 min-w-[120px]">
       <div className="text-xl">{icon}</div>
       <div>
         <div className="text-lg font-bold text-white leading-none">
-          {score}
-          {sublabel && <span className="text-xs text-muted-foreground ml-0.5">{sublabel}</span>}
+          {score}{sublabel && <span className="text-xs text-muted-foreground ml-0.5">{sublabel}</span>}
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
       </div>
