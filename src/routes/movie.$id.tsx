@@ -121,8 +121,8 @@ function MovieDetails() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-transparent" />
 
-        {/* ← FIXED: consistent max-w + padding matching header/rows */}
-        <div className="relative h-full mx-auto max-w-[1600px] px-6 lg:px-10 pt-24 pb-10 flex flex-col md:flex-row gap-10 items-end md:items-center">
+        {/* Content wrapper — min-h-screen so it always fills the section height */}
+        <div className="relative min-h-screen w-full mx-auto max-w-[1600px] px-6 lg:px-10 pt-28 pb-16 flex flex-col md:flex-row gap-10 items-end md:items-center">
           {/* Poster */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
