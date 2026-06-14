@@ -6,10 +6,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar, Clock, Download, Play, Plus, Share2, Star,
-  Trophy, Eye, TrendingUp, Heart, ChevronRight, ChevronLeft,
+  Trophy, Eye, Heart, ChevronRight, ChevronLeft,
   Check, Flame
 } from "lucide-react";
 import { useState, useRef } from "react";
+import type React from "react";
 import { z } from "zod";
 import { tmdbApi, backdropUrl, posterUrl } from "@/services/tmdb";
 import { ContentRow } from "@/components/home/ContentRow";
@@ -188,10 +189,22 @@ function MovieDetails() {
 
             {/* Rating cards row */}
             <div className="mt-6 flex flex-wrap gap-3">
-              <RatingCard icon={<Star className="size-4 fill-yellow-400 text-yellow-400" />} score={voteAvg} label="IMDb" sublabel="/10" accent="yellow" />
-              <RatingCard icon={<span className="text-red-500 text-base">🍅</span>} score={data.vote_average ? `${Math.round(data.vote_average * 10)}%` : "—"} label="Tomatometer" accent="red" />
-              <RatingCard icon={<Eye className="size-4 text-blue-400" />} score={voteCount} label="Votes" accent="blue" />
-              {data.awards && <RatingCard icon={<Trophy className="size-4 text-amber-400" />} score="Winner" label="Oscar Winner" sublabel="Best Visual Effects" accent="amber" />}
+              <RatingCard
+                icon={<Star className="size-4 fill-yellow-400 text-yellow-400" />}
+                score={voteAvg}
+                label="IMDb"
+                sublabel="/10"
+              />
+              <RatingCard
+                icon={<span className="text-red-500 text-base">🍅</span>}
+                score={data.vote_average ? `${Math.round(data.vote_average * 10)}%` : "—"}
+                label="Tomatometer"
+              />
+              <RatingCard
+                icon={<Eye className="size-4 text-blue-400" />}
+                score={voteCount}
+                label="Votes"
+              />
             </div>
 
             {/* Action buttons */}
@@ -473,14 +486,17 @@ function MovieDetails() {
 
 // ─── SUB COMPONENTS ───
 
-function RatingCard({ icon, score, label, sublabel, accent }: {
-  icon: React.ReactNode; score: string; label: string; sublabel?: string; accent: string;
+function RatingCard({ icon, score, label, sublabel }: {
+  icon: React.ReactNode; score: string; label: string; sublabel?: string;
 }) {
   return (
     <div className="glass rounded-xl px-4 py-3 flex items-center gap-3 min-w-[120px]">
       <div className="text-xl">{icon}</div>
       <div>
-        <div className={`text-lg font-bold text-white leading-none`}>{score}{sublabel && <span className="text-xs text-muted-foreground ml-0.5">{sublabel}</span>}</div>
+        <div className="text-lg font-bold text-white leading-none">
+          {score}
+          {sublabel && <span className="text-xs text-muted-foreground ml-0.5">{sublabel}</span>}
+        </div>
         <div className="text-xs text-muted-foreground mt-0.5">{label}</div>
       </div>
     </div>
