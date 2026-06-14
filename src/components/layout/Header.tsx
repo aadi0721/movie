@@ -32,7 +32,7 @@ export function Header() {
         scrolled ? "glass-strong shadow-card" : "bg-transparent"
       }`}
     >
-      <div className="w-full flex items-center justify-between gap-6 px-4 lg:px-16 h-16">
+      <div className="mx-auto max-w-[1600px] flex items-center justify-between gap-6 px-6 lg:px-10 h-16">
         <div className="flex items-center gap-10">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight">

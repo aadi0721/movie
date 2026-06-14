@@ -53,7 +53,7 @@ function WatchPage() {
   const title = details.data?.title || details.data?.name || "";
 
   return (
-    <div className="pt-20 pb-20 w-full px-4 lg:px-16">
+    <div className="pt-20 pb-20 mx-auto max-w-[1600px] px-4 lg:px-10">
       <div className="flex items-center justify-between mb-5">
         <Link
           to="/movie/$id"

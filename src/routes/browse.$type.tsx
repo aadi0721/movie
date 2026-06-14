@@ -39,7 +39,7 @@ function BrowsePage() {
   const items = query.data?.pages.flatMap((p) => p.results) ?? [];
 
   return (
-    <div className="pt-28 pb-20 w-full px-4 lg:px-16">
+    <div className="pt-28 pb-20 mx-auto max-w-[1500px] px-6 lg:px-10">
       <h1 className="text-3xl md:text-5xl font-bold text-gradient">
         {type === "tv" ? "TV Shows" : "Movies"}
       </h1>

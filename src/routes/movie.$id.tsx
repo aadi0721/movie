@@ -121,7 +121,7 @@ function MovieDetails() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-transparent" />
 
-        <div className="relative h-full w-full px-4 lg:px-16 pt-24 pb-10 flex flex-col md:flex-row gap-10 items-end md:items-center">
+        <div className="relative h-full mx-auto max-w-[1600px] px-6 lg:px-10 pt-24 pb-10 flex flex-col md:flex-row gap-10 items-end md:items-center">
           {/* Poster */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
