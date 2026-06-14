@@ -47,7 +47,7 @@ export function HeroCarousel({ items }: Props) {
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
 
-      <div className="relative h-full mx-auto max-w-[1600px] px-6 lg:px-10 flex items-end pb-24">
+      <div className="relative h-full w-full px-4 lg:px-16 flex items-end pb-24">
         <motion.div
           key={current.id}
           initial={{ opacity: 0, y: 30 }}
