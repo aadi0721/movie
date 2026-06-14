@@ -1,7 +1,7 @@
 export function Footer() {
   return (
     <footer className="mt-32 border-t border-border/60">
-      <div className="mx-auto max-w-[1600px] px-6 lg:px-10 py-10 grid gap-8 md:grid-cols-4 text-sm">
+      <div className="w-full px-4 lg:px-16 py-10 grid gap-8 md:grid-cols-4 text-sm">
         <div>
           <div className="text-lg font-bold tracking-tight">
             MOVIES<span className="text-primary">ALERT</span>
