@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 
+
 interface Props {
   title: string;
   seeAllTo?: string;
@@ -20,11 +21,11 @@ export function ContentRow({ title, seeAllTo, children }: Props) {
 
   return (
     <section className="mt-12 group/row">
-      <div className="w-full px-6 lg:px-10 flex items-end justify-between">
+      <div className="mx-auto max-w-[1600px] px-6 lg:px-10 flex items-end justify-between">
         <h2 className="text-xl md:text-2xl font-semibold tracking-tight">{title}</h2>
         <div className="flex items-center gap-2">
           {seeAllTo && (
-            <a href={seeAllTo} className="text-sm text-muted-foreground hover:text-foreground transition">
+            <a href={seeAllTo} className="text-sm text-muted-foreground hover:text-foreground transition story-link">
               See all
             </a>
           )}
@@ -40,9 +41,7 @@ export function ContentRow({ title, seeAllTo, children }: Props) {
       </div>
       <div
         ref={ref}
-        className={`mt-5 flex gap-4 overflow-x-auto scrollbar-none px-6 lg:px-10 mask-fade-r ${
-          dragging ? "cursor-grabbing" : "cursor-grab"
-        }`}
+        className={`mt-5 flex gap-4 overflow-x-auto scrollbar-none px-6 lg:px-10 mx-auto max-w-[1600px] mask-fade-r ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
         onMouseDown={(e) => {
           setDragging(true);
           start.current = { x: e.pageX, scroll: ref.current?.scrollLeft ?? 0 };

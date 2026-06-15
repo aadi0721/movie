@@ -47,8 +47,8 @@ export function HeroCarousel({ items }: Props) {
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
 
-      {/* Content */}
-      <div className="absolute inset-0 w-full px-6 lg:px-10 flex items-end pb-24">
+      {/* Content — absolute positioned so it always fills the section correctly */}
+      <div className="absolute inset-0 w-full mx-auto max-w-[1600px] left-0 right-0 px-6 lg:px-10 flex items-end pb-24">
         <motion.div
           key={current.id}
           initial={{ opacity: 0, y: 30 }}
