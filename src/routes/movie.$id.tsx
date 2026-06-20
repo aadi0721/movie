@@ -10,6 +10,8 @@ import { useState, useRef } from "react";
 import type React from "react";
 import { z } from "zod";
 import { tmdbApi, backdropUrl, posterUrl } from "@/services/tmdb";
+import { getDownloads } from "@/services/downloads";
+import type { DownloadLink } from "@/types/streaming";
 import { ContentRow } from "@/components/home/ContentRow";
 import { MovieCard } from "@/components/cards/MovieCard";
 import { addToWatchlist, isInWatchlist, removeFromWatchlist } from "@/services/watchlist";
@@ -118,27 +120,26 @@ function MovieDetails() {
         <div className="absolute inset-0 w-full px-6 lg:px-10 pt-28 pb-16 flex flex-col md:flex-row gap-10 items-end md:items-center">
           {/* Poster */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7 }}
-            className="shrink-0 self-end md:self-auto"
+            initial={{ opacity: 0, x: -30, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+            className="shrink-0 self-end md:self-auto relative group z-10"
           >
-            <div className="relative w-[200px] md:w-[260px] aspect-[2/3] rounded-2xl overflow-hidden shadow-card border border-white/10">
+            {/* Ambient glow behind poster */}
+            <div className="absolute -inset-4 bg-primary-glow/30 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="relative w-[200px] md:w-[260px] lg:w-[300px] aspect-[2/3] rounded-[1.5rem] overflow-hidden shadow-card shadow-black/80 ring-1 ring-white/20 transition-transform duration-500 hover:scale-[1.02]">
               {data.poster_path && (
                 <img src={posterUrl(data.poster_path, "w500") ?? ""} alt={title} className="w-full h-full object-cover" />
               )}
               <Link
                 to="/watch/$id"
                 params={{ id }}
-                className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/40 transition-all group"
+                className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/50 backdrop-blur-0 hover:backdrop-blur-sm transition-all duration-500 group/play"
               >
-                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm border border-white/40 flex items-center justify-center opacity-0 group-hover:opacity-100 scale-75 group-hover:scale-100 transition-all">
-                  <Play className="size-6 fill-white text-white ml-1" />
+                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/50 shadow-glow flex items-center justify-center opacity-0 group-hover/play:opacity-100 scale-75 group-hover/play:scale-100 transition-all duration-500 delay-75">
+                  <Play className="size-7 fill-white text-white ml-1.5" />
                 </div>
               </Link>
-              <div className="absolute bottom-3 left-3 right-3 text-center">
-                <span className="text-[10px] tracking-[0.25em] uppercase text-white/70 font-medium">{title}</span>
-              </div>
             </div>
           </motion.div>
 
@@ -158,9 +159,9 @@ function MovieDetails() {
             </div>
 
             {logoUrl ? (
-              <img src={logoUrl} alt={title} className="h-12 md:h-16 lg:h-20 w-auto object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.6)]" />
+              <img src={logoUrl} alt={title} className="h-14 md:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_8px_30px_rgba(0,0,0,0.8)]" />
             ) : (
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-none text-white">{title}</h1>
+              <h1 className="text-5xl md:text-6xl lg:text-[5.5rem] font-black tracking-tight leading-[1.1] text-gradient">{title}</h1>
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-white/60">
@@ -185,15 +186,15 @@ function MovieDetails() {
               <RatingCard icon={<Eye className="size-4 text-blue-400" />} score={voteCount} label="Votes" />
             </div>
 
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/watch/$id" params={{ id }} className="flex items-center gap-2.5 px-7 py-3 rounded-xl bg-gradient-primary text-white font-semibold shadow-glow hover:scale-105 transition-transform text-sm">
-                <Play className="size-4 fill-white" /> Play Movie
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link to="/watch/$id" params={{ id }} className="flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-gradient-primary text-white font-bold shadow-glow hover:scale-[1.03] transition-all ring-glow">
+                <Play className="size-5 fill-white" /> Play Movie
               </Link>
-              <button onClick={() => toggleWatchlist.mutate()} className="flex items-center gap-2.5 px-5 py-3 rounded-xl glass-strong font-medium hover:bg-secondary transition text-sm text-white">
-                {watchlist.data ? <Check className="size-4 text-primary-glow" /> : <Plus className="size-4" />} My List
+              <button onClick={() => toggleWatchlist.mutate()} className="flex items-center gap-3 px-6 py-3.5 rounded-2xl glass-strong font-semibold hover:bg-white/10 hover:border-white/30 hover:scale-[1.03] transition-all text-white">
+                {watchlist.data ? <Check className="size-5 text-primary-glow" /> : <Plus className="size-5" />} My List
               </button>
-              <Link to="/download/$id" params={{ id }} className="flex items-center gap-2.5 px-5 py-3 rounded-xl glass-strong font-medium hover:bg-secondary transition text-sm text-white">
-                <Download className="size-4" /> Download
+              <Link to="/download/$id" params={{ id }} className="flex items-center gap-3 px-6 py-3.5 rounded-2xl glass-strong font-semibold hover:bg-white/10 hover:border-white/30 hover:scale-[1.03] transition-all text-white">
+                <Download className="size-5" /> Download
               </Link>
             </div>
           </motion.div>
@@ -201,20 +202,20 @@ function MovieDetails() {
       </section>
 
       {/* TABS */}
-      <div className="sticky top-16 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
+      <div className="sticky top-16 z-30 bg-surface/40 backdrop-blur-3xl border-b border-white/5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]">
         <div className="w-full px-6 lg:px-10">
-          <div className="flex gap-1 overflow-x-auto scrollbar-none">
+          <div className="flex gap-2 overflow-x-auto scrollbar-none py-1">
             {TABS.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative px-5 py-4 text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeTab === tab ? "text-white" : "text-muted-foreground hover:text-white/80"
+                className={`relative px-6 py-4 text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
+                  activeTab === tab ? "text-white" : "text-muted-foreground hover:text-white/90"
                 }`}
               >
                 {tab}
                 {activeTab === tab && (
-                  <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-primary rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                  <motion.div layoutId="tab-indicator" className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-primary rounded-t-lg shadow-[0_-2px_10px_var(--primary-glow)]" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
                 )}
               </button>
             ))}
@@ -241,16 +242,16 @@ function MovieDetails() {
                 </div>
                 <div className="space-y-3">
                   {[
-                    { label: "IMDb Rating", value: `${voteAvg}/10`, icon: <Star className="size-4 fill-yellow-400 text-yellow-400" /> },
-                    { label: "Runtime", value: runtime || "—", icon: <Clock className="size-4 text-blue-400" /> },
-                    { label: "Release", value: year || "—", icon: <Calendar className="size-4 text-green-400" /> },
-                    { label: "Genre", value: genres[0] || "—", icon: <Trophy className="size-4 text-amber-400" /> },
+                    { label: "IMDb Rating", value: `${voteAvg}/10`, icon: <Star className="size-5 fill-yellow-400 text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]" /> },
+                    { label: "Runtime", value: runtime || "—", icon: <Clock className="size-5 text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]" /> },
+                    { label: "Release", value: year || "—", icon: <Calendar className="size-5 text-green-400 drop-shadow-[0_0_10px_rgba(74,222,128,0.5)]" /> },
+                    { label: "Genre", value: genres[0] || "—", icon: <Trophy className="size-5 text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" /> },
                   ].map((item) => (
-                    <div key={item.label} className="glass rounded-xl p-4 flex items-center gap-4">
-                      <div className="shrink-0">{item.icon}</div>
+                    <div key={item.label} className="glass-strong rounded-2xl p-4 flex items-center gap-5 hover:border-white/20 transition-colors">
+                      <div className="shrink-0 p-3 bg-surface/50 rounded-xl ring-1 ring-white/5">{item.icon}</div>
                       <div>
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">{item.label}</div>
-                        <div className="mt-0.5 text-sm font-semibold text-white">{item.value}</div>
+                        <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</div>
+                        <div className="mt-1 text-base font-bold text-white tracking-wide">{item.value}</div>
                       </div>
                     </div>
                   ))}
@@ -285,35 +286,7 @@ function MovieDetails() {
               </div>
             )}
 
-            {activeTab === "Downloads" && (
-              <div>
-                <h2 className="text-xl font-semibold text-white mb-6">Download Options</h2>
-                <div className="space-y-4 max-w-2xl">
-                  {[
-                    { quality: "4K UHD (2160p)", size: "~18 GB", badges: ["HDR10+", "Dolby Vision", "DTS-X"] },
-                    { quality: "1080p BluRay", size: "~8 GB", badges: ["HDR", "DTS-HD"] },
-                    { quality: "720p WEB-DL", size: "~3 GB", badges: ["H.264"] },
-                    { quality: "480p HDRip", size: "~1.2 GB", badges: ["H.264"] },
-                  ].map((item) => (
-                    <div key={item.quality} className="glass rounded-2xl p-5 flex items-center justify-between gap-4">
-                      <div>
-                        <div className="font-semibold text-white">{item.quality}</div>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {item.badges.map((b) => (
-                            <span key={b} className="text-xs px-2 py-0.5 rounded bg-primary/15 text-primary-glow border border-primary/20">{b}</span>
-                          ))}
-                          <span className="text-xs px-2 py-0.5 rounded bg-surface-elevated text-muted-foreground">{item.size}</span>
-                        </div>
-                      </div>
-                      <Link to="/download/$id" params={{ id }} className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-primary text-white text-sm font-semibold shadow-glow hover:scale-105 transition-transform">
-                        <Download className="size-4" /> Download
-                      </Link>
-                    </div>
-                  ))}
-                  <p className="text-xs text-muted-foreground mt-4">Links sourced automatically. Report broken links via the Share button.</p>
-                </div>
-              </div>
-            )}
+            {activeTab === "Downloads" && <DownloadsTab tmdbId={Number(id)} media={media} title={data?.title || data?.name || ""} year={(data?.release_date || data?.first_air_date || "").slice(0, 4)} id={id} />}
 
             {activeTab === "Gallery" && (
               <div>
@@ -378,20 +351,22 @@ function MovieDetails() {
       </div>
 
       {/* STATS BAR */}
-      <div className="w-full px-6 lg:px-10 mt-16">
-        <div className="glass rounded-2xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border overflow-hidden">
+      <div className="w-full px-6 lg:px-10 mt-20 mb-10">
+        <div className="glass-strong rounded-[2rem] grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border overflow-hidden border-t border-white/10 shadow-2xl">
           {[
-            { icon: <Eye className="size-5 text-blue-400" />, value: "184K", label: "Watching Now" },
-            { icon: <Flame className="size-5 text-orange-400" />, value: `Trending #${Math.ceil(Math.random() * 5)}`, label: "Today" },
-            { icon: <Heart className="size-5 text-pink-400" />, value: `${(data.vote_count / 1000).toFixed(1)}M`, label: "Likes" },
-            { icon: <Download className="size-5 text-green-400" />, value: "18M", label: "Downloads" },
-            { icon: <Calendar className="size-5 text-purple-400" />, value: "Released", label: releaseDate },
-            { icon: <Trophy className="size-5 text-amber-400" />, value: "Oscar Winner", label: "Best Visual Effects" },
+            { icon: <Eye className="size-6 text-blue-400" />, value: "184K", label: "Watching Now" },
+            { icon: <Flame className="size-6 text-orange-400" />, value: `Trending #${Math.ceil(Math.random() * 5)}`, label: "Today" },
+            { icon: <Heart className="size-6 text-pink-400" />, value: `${(data.vote_count / 1000).toFixed(1)}M`, label: "Likes" },
+            { icon: <Download className="size-6 text-green-400" />, value: "18M", label: "Downloads" },
+            { icon: <Calendar className="size-6 text-purple-400" />, value: "Released", label: releaseDate },
+            { icon: <Trophy className="size-6 text-amber-400" />, value: "Oscar Winner", label: "Best Visual Effects" },
           ].map((stat, i) => (
-            <div key={i} className="flex flex-col items-center gap-1.5 py-5 px-3">
-              {stat.icon}
-              <div className="text-sm font-bold text-white">{stat.value}</div>
-              <div className="text-xs text-muted-foreground text-center">{stat.label}</div>
+            <div key={i} className="flex flex-col items-center gap-2 py-8 px-4 hover:bg-white/5 transition-colors group">
+              <div className="p-3 bg-surface rounded-2xl ring-1 ring-white/5 group-hover:scale-110 group-hover:ring-white/20 transition-all duration-300">
+                {stat.icon}
+              </div>
+              <div className="text-xl font-black text-white mt-2 tracking-wide">{stat.value}</div>
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -420,6 +395,98 @@ function DetailRow({ label, value, extra }: { label: string; value: string; extr
       <span className="shrink-0 w-28 text-muted-foreground">{label}</span>
       <span className="text-white font-medium">{value}</span>
       {extra && <span className="text-primary-glow text-xs">{extra}</span>}
+    </div>
+  );
+}
+
+function DownloadsTab({ tmdbId, media, title, year, id }: { tmdbId: number; media: "movie" | "tv"; title: string; year: string; id: string }) {
+  const downloads = useQuery({
+    queryKey: ["downloads", tmdbId, title, year],
+    queryFn: () => getDownloads(tmdbId, media, title, year),
+    enabled: !!title,
+  });
+
+  const grouped = (downloads.data ?? []).reduce<Record<string, DownloadLink[]>>((acc, d) => {
+    (acc[d.quality] ??= []).push(d);
+    return acc;
+  }, {});
+
+  const hasLinks = Object.keys(grouped).length > 0;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-white">Download Options</h2>
+        {hasLinks && (
+          <Link
+            to="/download/$id"
+            params={{ id }}
+            className="text-sm text-primary-glow hover:underline"
+          >
+            View all →
+          </Link>
+        )}
+      </div>
+
+      {downloads.isLoading && (
+        <div className="glass rounded-2xl p-8 text-center">
+          <div className="inline-flex items-center gap-3 text-muted-foreground">
+            <div className="size-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            Searching for download sources…
+          </div>
+        </div>
+      )}
+
+      {!downloads.isLoading && !hasLinks && (
+        <div className="glass rounded-2xl p-8 text-center space-y-2">
+          <p className="text-muted-foreground">
+            No download links available for this title yet.
+          </p>
+          <p className="text-xs text-muted-foreground/70">
+            Links are sourced automatically every 24 hours from VegaMovies.
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-4 max-w-2xl">
+        {Object.entries(grouped).map(([quality, items]) => (
+          <div key={quality} className="glass-strong rounded-2xl p-5 border border-white/5 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="font-bold text-lg text-white tracking-wide">{quality}</div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground bg-surface px-3 py-1 rounded-full ring-1 ring-border">
+                {items.length} source{items.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {items.map((d) => (
+                <a
+                  key={d.id}
+                  href={d.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center justify-between gap-4 p-4 rounded-xl bg-surface/50 border border-white/5 hover:border-primary/50 hover:bg-primary/10 transition-all duration-300 shadow-sm hover:shadow-glow"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-white truncate group-hover:text-primary-glow transition-colors">{d.provider}</div>
+                    <div className="text-xs font-medium text-muted-foreground mt-1 flex items-center gap-2">
+                      <span className="bg-black/30 px-2 py-0.5 rounded">{d.size}</span>
+                      {d.hdr && <span className="bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded">HDR</span>}
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-lg bg-surface group-hover:bg-primary text-muted-foreground group-hover:text-white transition-colors duration-300">
+                    <Download className="size-4 shrink-0" />
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        ))}
+        {hasLinks && (
+          <p className="text-xs text-muted-foreground mt-4">
+            Links sourced automatically from VegaMovies. Report broken links via the Share button.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

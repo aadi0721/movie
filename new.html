@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Result System</title>
+
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            background:#f2f2f2;
+            text-align:center;
+        }
+
+        .container{
+            width:400px;
+            margin:50px auto;
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:0 0 10px gray;
+        }
+
+        input{
+            width:90%;
+            padding:10px;
+            margin:8px;
+        }
+
+        button{
+            padding:10px 20px;
+            background:green;
+            color:white;
+            border:none;
+            cursor:pointer;
+        }
+
+        #result{
+            margin-top:20px;
+            font-size:18px;
+            font-weight:bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Student Result Management</h2>
+
+    <input type="text" id="name" placeholder="Enter Name">
+
+    <input type="number" id="m1" placeholder="Subject 1 Marks">
+
+    <input type="number" id="m2" placeholder="Subject 2 Marks">
+
+    <input type="number" id="m3" placeholder="Subject 3 Marks">
+
+    <button onclick="calculateResult()">
+        Check Result
+    </button>
+
+    <div id="result"></div>
+
+</div>
+
+<script>
+
+function calculateResult(){
+
+    let name = document.getElementById("name").value;
+
+    let m1 = Number(document.getElementById("m1").value);
+    let m2 = Number(document.getElementById("m2").value);
+    let m3 = Number(document.getElementById("m3").value);
+
+    let marks = [m1,m2,m3];
+
+    let total = 0;
+
+    // FOR LOOP
+    for(let i=0;i<marks.length;i++){
+        total += marks[i];
+    }
+
+    let percentage = total / 3;
+
+    let grade;
+
+    // IF ELSE
+    if(percentage >= 90){
+        grade = "A+";
+    }
+    else if(percentage >= 75){
+        grade = "A";
+    }
+    else if(percentage >= 60){
+        grade = "B";
+    }
+    else if(percentage >= 40){
+        grade = "C";
+    }
+    else{
+        grade = "Fail";
+    }
+
+    let message="";
+
+    // SWITCH CASE
+    switch(grade){
+
+        case "A+":
+            message="Excellent Performance";
+            break;
+
+        case "A":
+            message="Very Good";
+            break;
+
+        case "B":
+            message="Good";
+            break;
+
+        case "C":
+            message="Average";
+            break;
+
+        default:
+            message="Need Improvement";
+    }
+
+    document.getElementById("result").innerHTML=
+    `
+    Name : ${name}<br>
+    Total : ${total}<br>
+    Percentage : ${percentage.toFixed(2)}%<br>
+    Grade : ${grade}<br>
+    Remark : ${message}
+    `;
+}
+
+</script>
+
+</body>
+</html>

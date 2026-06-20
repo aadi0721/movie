@@ -1,4 +1,4 @@
-const TMDB_BASE = "https://api.themoviedb.org/3";
+const TMDB_BASE = "https://api.tmdb.org/3";
 
 export async function tmdbFetch<T>(
   path: string,

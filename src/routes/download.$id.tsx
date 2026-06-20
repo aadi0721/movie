@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download as DownloadIcon, HardDrive } from "lucide-react";
+import { ArrowLeft, Download as DownloadIcon, HardDrive, AlertCircle } from "lucide-react";
 import { tmdbApi } from "@/services/tmdb";
 import { getDownloads } from "@/services/downloads";
 import type { DownloadLink } from "@/types/streaming";
@@ -17,9 +17,18 @@ function DownloadPage() {
     queryKey: ["details", tmdbId, "movie"],
     queryFn: () => tmdbApi.details({ data: { id: tmdbId, mediaType: "movie" } }),
   });
+
+  // Extract title + year from TMDB details (already loaded)
+  const movieTitle = details.data?.title || details.data?.name || "";
+  const releaseYear = (
+    details.data?.release_date || details.data?.first_air_date || ""
+  ).slice(0, 4);
+
   const downloads = useQuery({
-    queryKey: ["downloads", tmdbId],
-    queryFn: () => getDownloads(tmdbId),
+    queryKey: ["downloads", tmdbId, movieTitle, releaseYear],
+    queryFn: () => getDownloads(tmdbId, "movie", movieTitle, releaseYear),
+    // Only fetch when we have the title (avoids hitting TMDB on the backend)
+    enabled: !!movieTitle,
   });
 
   const grouped = (downloads.data ?? []).reduce<Record<string, DownloadLink[]>>((acc, d) => {
@@ -27,21 +36,46 @@ function DownloadPage() {
     return acc;
   }, {});
 
+  const hasLinks = Object.keys(grouped).length > 0;
+
   return (
     <div className="pt-24 pb-20 mx-auto max-w-[1100px] px-6 lg:px-10">
       <Link to="/movie/$id" params={{ id }} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition mb-6">
         <ArrowLeft className="size-4" /> Back to details
       </Link>
       <h1 className="text-3xl md:text-4xl font-bold text-gradient">
-        Download {details.data?.title || details.data?.name || ""}
+        Download {movieTitle}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground max-w-2xl">
-        Select a quality tier and provider. File sizes shown are approximate. Downloads
-        resolve from <code className="text-primary-glow">GET /api/downloads/{tmdbId}</code>.
+        {hasLinks
+          ? "Select a quality tier and provider below. File sizes are approximate."
+          : downloads.isLoading
+            ? "Searching for download sources…"
+            : ""}
       </p>
 
       <div className="mt-8 space-y-6">
-        {downloads.isLoading && <div className="text-muted-foreground">Resolving sources…</div>}
+        {downloads.isLoading && (
+          <div className="glass rounded-2xl p-8 text-center">
+            <div className="inline-flex items-center gap-3 text-muted-foreground">
+              <div className="size-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              Resolving download sources…
+            </div>
+          </div>
+        )}
+
+        {!downloads.isLoading && !hasLinks && (
+          <div className="glass rounded-2xl p-8 text-center space-y-3">
+            <AlertCircle className="size-10 text-muted-foreground mx-auto" />
+            <p className="text-muted-foreground">
+              No download links found for <strong>{movieTitle}</strong>.
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              This movie may not have been scraped yet. Links are updated automatically every 24 hours.
+            </p>
+          </div>
+        )}
+
         {Object.entries(grouped).map(([quality, items]) => (
           <section key={quality} className="glass rounded-2xl p-5">
             <div className="flex items-center justify-between mb-4">

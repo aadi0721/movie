@@ -1,0 +1,17 @@
+# render.yaml — Render Blueprint for one-click deploy
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: moviesalert-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: ./api
+    plan: free
+    envVars:
+      - key: TMDB_API_KEY
+        sync: false    # set manually in Render dashboard
+      - key: ALLOWED_ORIGINS
+        value: "https://your-frontend-domain.com"
+      - key: PORT
+        value: "3001"
