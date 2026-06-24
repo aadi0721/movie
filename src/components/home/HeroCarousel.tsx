@@ -2,8 +2,40 @@ import { Link } from "@tanstack/react-router";
 import { motion, useMotionValue, useSpring, useTransform, useMotionTemplate } from "framer-motion";
 import { Play, Plus, Star } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { TmdbMovie } from "@/types/tmdb";
-import { backdropUrl, posterUrl } from "@/services/tmdb";
+import { backdropUrl, posterUrl, tmdbApi, TMDB_IMG } from "@/services/tmdb";
+
+function HeroTitle({ movie }: { movie: TmdbMovie }) {
+  const mediaType = movie.media_type === "tv" || movie.first_air_date ? "tv" : "movie";
+  
+  const { data } = useQuery({
+    queryKey: ["tmdb", "details", mediaType, movie.id],
+    queryFn: () => tmdbApi.details({ data: { id: movie.id, mediaType } }),
+    staleTime: 5 * 60_000,
+  });
+
+  const logo = data?.images?.logos?.find((l) => l.iso_639_1 === "en") || data?.images?.logos?.[0];
+  const title = movie.title || movie.name || "";
+
+  if (logo) {
+    return (
+      <div className="mt-6 h-20 md:h-28 lg:h-36 flex items-end justify-start">
+        <img 
+          src={`${TMDB_IMG}/w500${logo.file_path}`} 
+          alt={title} 
+          className="max-h-full max-w-[80%] object-contain drop-shadow-[0_8px_30px_rgba(0,0,0,0.8)] origin-bottom-left"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <h1 className="mt-6 text-5xl md:text-7xl lg:text-[5rem] font-black tracking-tighter text-gradient leading-[1.05] drop-shadow-2xl">
+      {title}
+    </h1>
+  );
+}
 
 interface Props { items: TmdbMovie[] }
 
@@ -19,7 +51,6 @@ export function HeroCarousel({ items }: Props) {
 
   if (slides.length === 0) return null;
   const current = slides[idx];
-  const title = current.title || current.name || "";
   const year = (current.release_date || current.first_air_date || "").slice(0, 4);
 
   return (
@@ -62,9 +93,7 @@ export function HeroCarousel({ items }: Props) {
               Trending Now
             </span>
             
-            <h1 className="mt-6 text-5xl md:text-7xl lg:text-[5rem] font-black tracking-tighter text-gradient leading-[1.05] drop-shadow-2xl">
-              {title}
-            </h1>
+            <HeroTitle movie={current} />
             
             <div className="mt-6 flex items-center gap-4 text-[15px] text-white/70 font-medium">
               {year && <span>{year}</span>}

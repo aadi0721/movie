@@ -1,8 +1,18 @@
 {
   "vegamovies": {
     "status": "RUNNING",
-    "movies_discovered": 8900,
-    "links_discovered": 95,
-    "updated_at": "2026-06-24T22:47:59.053189+00:00"
+    "session_movies_crawled": 250,
+    "session_links_found": 894,
+    "total_movies_in_db": 18244,
+    "total_links_in_db": 57091,
+    "updated_at": "2026-06-24T23:02:03.848804+00:00"
+  },
+  "rogmovies": {
+    "status": "COMPLETED",
+    "session_movies_crawled": 0,
+    "session_links_found": 0,
+    "total_movies_in_db": 0,
+    "total_links_in_db": 0,
+    "updated_at": "2026-06-24T23:00:57.667283+00:00"
   }
 }

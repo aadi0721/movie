@@ -32,8 +32,8 @@ from scraper.title_parser import parse_quality_size, parse_title
 
 class RogMoviesSpider(CrawlSpider):
     name = "rogmovies"
-    allowed_domains = ["rogmovies.cfd", "rogmovies.cam", "rogmovies.dad", "rogmovies.men"]
-    start_urls = ["https://rogmovies.cfd/"]
+    allowed_domains = ["rogmovies.work", "rogmovies.cfd", "rogmovies.cam", "rogmovies.dad", "rogmovies.men"]
+    start_urls = ["https://rogmovies.work/"]
     
     rules = (
         Rule(LinkExtractor(allow=r'/download-'), callback='parse_detail', follow=True),
@@ -53,7 +53,7 @@ class RogMoviesSpider(CrawlSpider):
         self.db_path = db_path
 
         if search:
-            self.start_urls = [f"https://rogmovies.cfd/?s={search.replace(' ', '+')}"]
+            self.start_urls = [f"https://rogmovies.work/?s={search.replace(' ', '+')}"]
             self.rules = (
                 Rule(LinkExtractor(allow=r'/download-'), callback='parse_detail', follow=False),
             )
