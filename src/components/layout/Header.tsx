@@ -29,7 +29,7 @@ export function Header() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        scrolled ? "glass-strong shadow-card" : "bg-transparent"
+        scrolled ? "glass-strong border-t-0 border-x-0 shadow-card" : "bg-transparent"
       }`}
     >
       <div className="w-full flex items-center justify-between gap-6 px-6 lg:px-10 h-16">

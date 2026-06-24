@@ -5,12 +5,13 @@ Uses the same TMDB_API_KEY that the frontend already has in .env.
 """
 
 import httpx
+from async_lru import alru_cache
 
 from config import settings
 
 TMDB_BASE = "https://api.tmdb.org/3"
 
-
+@alru_cache(maxsize=1024)
 async def get_title_by_id(
     tmdb_id: int,
     media_type: str = "movie",

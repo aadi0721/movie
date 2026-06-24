@@ -17,12 +17,22 @@ import hashlib
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 
 from config import settings
-from database import get_all_movies, get_download_links, get_stats, search_movie
+from database import (
+    get_all_movies,
+    get_download_links,
+    get_stats,
+    search_movies,
+    get_movies_by_tmdb_id,
+    link_tmdb_id_to_movies,
+)
 from scheduler import run_spider, start_scheduler, stop_scheduler
 from tmdb_client import get_title_by_id
 
@@ -46,6 +56,7 @@ class DownloadLink(BaseModel):
     size: str
     provider: str
     url: str
+    season: str = ""
     hdr: bool = False
 
 
@@ -67,12 +78,15 @@ async def lifespan(app: FastAPI):
 
 # ── App ──────────────────────────────────────────────────────────────
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="MoviesAlert Downloads API",
     description="Scrapy-powered backend that serves VegaMovies download links matched by TMDB ID.",
     version="2.0.0",
     lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -106,19 +120,26 @@ async def search_downloads_endpoint(
     Search download links by title directly (no TMDB involved).
     Useful when you already know the movie name.
     """
-    movie = search_movie(title, year)
+    movies = search_movies(title, year)
 
-    if not movie and year:
-        movie = search_movie(title, "")
+    if not movies and year:
+        movies = search_movies(title, "")
 
-    if not movie:
+    if not movies:
         return []
 
-    return _format_links(get_download_links(movie.id), title)
+    links_with_season = []
+    for m in movies:
+        for link in get_download_links(m.id):
+            links_with_season.append((link, m.season))
+
+    return _format_links(links_with_season, title)
 
 
 @app.get("/api/downloads/{tmdb_id}", response_model=list[DownloadLink])
+@limiter.limit("60/minute")
 async def get_downloads_endpoint(
+    request: Request,
     tmdb_id: int,
     media: str = Query("movie", pattern="^(movie|tv)$"),
     title: str = Query("", description="Movie title (skips TMDB lookup if provided)"),
@@ -151,42 +172,54 @@ async def get_downloads_endpoint(
     log.info("Resolving downloads for '%s' (%s) [tmdb=%d]", title, year, tmdb_id)
 
     # 2 — Search SQLite database
-    movie = search_movie(title, year)
+    # 2a. Try fast lookup by TMDB ID first
+    movies = get_movies_by_tmdb_id(tmdb_id)
+    
+    # 2b. Fallback to fuzzy search
+    if not movies:
+        movies = search_movies(title, year, media)
+        if not movies:
+            # Try without year as fallback
+            movies = search_movies(title, "", media)
+            
+        # If fuzzy search found matches, link them to the TMDB ID for next time
+        if movies:
+            movie_ids = [m.id for m in movies]
+            link_tmdb_id_to_movies(tmdb_id, movie_ids)
+            log.info("Linked TMDB ID %d to movies: %s", tmdb_id, movie_ids)
 
-    if not movie:
-        # Try without year as fallback
-        movie = search_movie(title, "")
-
-    if not movie:
+    if not movies:
         log.info("No match found in database for '%s' (%s)", title, year)
         return []
 
-    log.info("Matched to: '%s' (%s) [id=%d]", movie.title, movie.year, movie.id)
+    log.info("Matched to %d entries for '%s' (%s)", len(movies), title, year)
 
     # 3 — Get download links
-    return _format_links(get_download_links(movie.id), title)
+    links_with_season = []
+    for m in movies:
+        for link in get_download_links(m.id):
+            links_with_season.append((link, m.season))
+
+    return _format_links(links_with_season, title)
 
 
-def _format_links(db_links, title: str) -> list[DownloadLink]:
+def _format_links(links_with_season, title: str) -> list[DownloadLink]:
     """Convert database link rows to frontend DownloadLink format."""
-    if not db_links:
+    if not links_with_season:
         return []
 
     result = []
-    for link in db_links:
+    for link, season in links_with_season:
         link_id = hashlib.md5(link.url.encode()).hexdigest()[:12]
         
-        provider = "VegaMovies"
-        if "nexdrive" in link.url.lower() or "rogmovies" in link.url.lower():
-            provider = "RogMovies"
-
         result.append(
             DownloadLink(
                 id=link_id,
                 quality=link.quality or "Unknown",
                 size=link.size or "—",
-                provider=provider,
+                provider=link.provider,
                 url=link.url,
+                season=season or "",
                 hdr="hdr" in (link.quality or "").lower()
                 or "2160" in (link.quality or ""),
             )
@@ -207,15 +240,17 @@ async def list_movies(
 
 
 @app.post("/api/scrape")
+@limiter.limit("1/minute")
 async def trigger_scrape(
-    background_tasks: BackgroundTasks,
+    request: Request,
     max_pages: int = Query(0, ge=0),
 ):
-    """Trigger a manual crawl in the background."""
-    background_tasks.add_task(run_spider, max_pages=max_pages)
+    """Trigger a manual crawl in the background via Huey."""
+    from tasks import run_spider_task
+    run_spider_task(max_pages)
     return {
         "status": "started",
-        "message": f"Crawl started in background (max_pages={max_pages})",
+        "message": f"Crawl enqueued in background (max_pages={max_pages})",
     }
 
 

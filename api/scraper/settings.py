@@ -19,21 +19,21 @@ NEWSPIDER_MODULE = "scraper.spiders"
 ROBOTSTXT_OBEY = False
 
 # Be polite: limit concurrent requests and add delay
-CONCURRENT_REQUESTS = 4
-DOWNLOAD_DELAY = 1.5  # seconds between requests to same domain
+CONCURRENT_REQUESTS = 32
+DOWNLOAD_DELAY = 0.25  # seconds between requests to same domain
 
 # Auto-throttle: dynamically adjusts delay based on server response time
 AUTOTHROTTLE_ENABLED = True
-AUTOTHROTTLE_START_DELAY = 1.0
-AUTOTHROTTLE_MAX_DELAY = 10.0
-AUTOTHROTTLE_TARGET_CONCURRENCY = 2.0
+AUTOTHROTTLE_START_DELAY = 0.5
+AUTOTHROTTLE_MAX_DELAY = 5.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 16.0
 AUTOTHROTTLE_DEBUG = False
 
 # ---------- Retries ----------
 
 RETRY_ENABLED = True
 RETRY_TIMES = 3
-RETRY_HTTP_CODES = [500, 502, 503, 504, 408, 429]
+RETRY_HTTP_CODES = [403, 500, 502, 503, 504, 408, 429]
 
 # ---------- Timeouts ----------
 

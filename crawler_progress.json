@@ -1,0 +1,8 @@
+{
+  "vegamovies": {
+    "status": "RUNNING",
+    "movies_discovered": 8600,
+    "links_discovered": 95,
+    "updated_at": "2026-06-24T22:45:33.563420+00:00"
+  }
+}

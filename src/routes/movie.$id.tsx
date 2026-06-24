@@ -126,20 +126,11 @@ function MovieDetails() {
             className="shrink-0 self-end md:self-auto relative group z-10"
           >
             {/* Ambient glow behind poster */}
-            <div className="absolute -inset-4 bg-primary-glow/30 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="absolute -inset-4 bg-primary-glow/15 blur-3xl rounded-[3rem] opacity-0 group-hover:opacity-60 transition-opacity duration-700" />
             <div className="relative w-[200px] md:w-[260px] lg:w-[300px] aspect-[2/3] rounded-[1.5rem] overflow-hidden shadow-card shadow-black/80 ring-1 ring-white/20 transition-transform duration-500 hover:scale-[1.02]">
               {data.poster_path && (
                 <img src={posterUrl(data.poster_path, "w500") ?? ""} alt={title} className="w-full h-full object-cover" />
               )}
-              <Link
-                to="/watch/$id"
-                params={{ id }}
-                className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/50 backdrop-blur-0 hover:backdrop-blur-sm transition-all duration-500 group/play"
-              >
-                <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/50 shadow-glow flex items-center justify-center opacity-0 group-hover/play:opacity-100 scale-75 group-hover/play:scale-100 transition-all duration-500 delay-75">
-                  <Play className="size-7 fill-white text-white ml-1.5" />
-                </div>
-              </Link>
             </div>
           </motion.div>
 
@@ -161,7 +152,7 @@ function MovieDetails() {
             {logoUrl ? (
               <img src={logoUrl} alt={title} className="h-14 md:h-20 lg:h-24 w-auto object-contain drop-shadow-[0_8px_30px_rgba(0,0,0,0.8)]" />
             ) : (
-              <h1 className="text-5xl md:text-6xl lg:text-[5.5rem] font-black tracking-tight leading-[1.1] text-gradient">{title}</h1>
+              <h1 className="text-5xl md:text-6xl lg:text-[5.5rem] font-black tracking-tighter leading-[1.1] text-gradient">{title}</h1>
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-white/60">
@@ -350,27 +341,7 @@ function MovieDetails() {
         </AnimatePresence>
       </div>
 
-      {/* STATS BAR */}
-      <div className="w-full px-6 lg:px-10 mt-20 mb-10">
-        <div className="glass-strong rounded-[2rem] grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-border overflow-hidden border-t border-white/10 shadow-2xl">
-          {[
-            { icon: <Eye className="size-6 text-blue-400" />, value: "184K", label: "Watching Now" },
-            { icon: <Flame className="size-6 text-orange-400" />, value: `Trending #${Math.ceil(Math.random() * 5)}`, label: "Today" },
-            { icon: <Heart className="size-6 text-pink-400" />, value: `${(data.vote_count / 1000).toFixed(1)}M`, label: "Likes" },
-            { icon: <Download className="size-6 text-green-400" />, value: "18M", label: "Downloads" },
-            { icon: <Calendar className="size-6 text-purple-400" />, value: "Released", label: releaseDate },
-            { icon: <Trophy className="size-6 text-amber-400" />, value: "Oscar Winner", label: "Best Visual Effects" },
-          ].map((stat, i) => (
-            <div key={i} className="flex flex-col items-center gap-2 py-8 px-4 hover:bg-white/5 transition-colors group">
-              <div className="p-3 bg-surface rounded-2xl ring-1 ring-white/5 group-hover:scale-110 group-hover:ring-white/20 transition-all duration-300">
-                {stat.icon}
-              </div>
-              <div className="text-xl font-black text-white mt-2 tracking-wide">{stat.value}</div>
-              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest text-center">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+
     </div>
   );
 }

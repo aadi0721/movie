@@ -13,9 +13,9 @@ import re
 import html
 
 
-def parse_title(raw_title: str) -> tuple[str, str]:
+def parse_title(raw_title: str) -> tuple[str, str, str]:
     """
-    Parse a VegaMovies post title into (clean_title, year).
+    Parse a VegaMovies post title into (clean_title, year, season).
 
     Parameters
     ----------
@@ -24,18 +24,28 @@ def parse_title(raw_title: str) -> tuple[str, str]:
 
     Returns
     -------
-    (title, year)
-        e.g. ("Mortal Kombat II", "2026")
-        year may be "" if not found.
+    (title, year, season)
+        e.g. ("Mortal Kombat II", "2026", "")
+        e.g. ("The Boys", "2022", "Season 3")
     """
     # Decode HTML entities
     text = html.unescape(raw_title).strip()
 
     # Extract year from (YYYY) pattern
     year = ""
-    year_match = re.search(r"\((\d{4})\)", text)
+    year_match = re.search(r"\(\b(\d{4})\b\)", text)
     if year_match:
         year = year_match.group(1)
+
+    # Extract season info
+    season = ""
+    season_match = re.search(r"(Season\s+\d+(?:\s*-\s*\d+)?|S\d+(?:\s*-\s*\d+)?|S\d+E\d+)", text, re.IGNORECASE)
+    if season_match:
+        season = season_match.group(1).strip()
+        # Optionally normalize "S01" to "Season 1"
+        if season.upper().startswith("S") and not season.lower().startswith("se"):
+            season = season.upper().replace("S", "Season ")
+            season = re.sub(r"Season 0+(\d)", r"Season \1", season)
 
     # Remove "Download " prefix (case-insensitive)
     text = re.sub(r"^download\s+", "", text, flags=re.IGNORECASE)
@@ -93,7 +103,7 @@ def parse_title(raw_title: str) -> tuple[str, str]:
     # Remove trailing dash or colon
     text = re.sub(r"[\s\-:]+$", "", text)
 
-    return text, year
+    return text, year, season
 
 
 def normalize_title(title: str) -> str:
@@ -114,8 +124,8 @@ def parse_quality_size(heading_text: str) -> tuple[str, str]:
     """
     Parse quality and size from an <h5> download heading.
 
-    Input:  "Mortal Kombat II (2026) {Hindi-English} 480p WEB-DL x264 [490MB]"
-    Output: ("480p WEB-DL x264", "490MB")
+    Input:  "Download Season 2 480p WEB-DL [490MB]"
+    Output: ("Season 2 480p WEB-DL", "490MB")
     """
     heading = html.unescape(heading_text).strip()
 
@@ -124,6 +134,16 @@ def parse_quality_size(heading_text: str) -> tuple[str, str]:
     size_match = re.search(r"\[([^\]]+)\]", heading)
     if size_match:
         size = size_match.group(1).strip()
+
+    # Extract Season or Episode info
+    season_info = ""
+    season_match = re.search(r"\b(Season\s+\d+|S\d+E\d+|Episode\s+\d+|S\d+(?:\s*-\s*\d+)?)\b", heading, re.IGNORECASE)
+    if season_match:
+        season_info = season_match.group(1).strip()
+        # Normalize S01 to Season 1
+        if season_info.upper().startswith("S") and not season_info.lower().startswith("se"):
+            season_info = season_info.upper().replace("S", "Season ")
+            season_info = re.sub(r"Season 0+(\d)", r"Season \1", season_info)
 
     # Extract quality: look for resolution + optional codec info
     quality = ""
@@ -149,5 +169,8 @@ def parse_quality_size(heading_text: str) -> tuple[str, str]:
         hq_match = re.search(r"(HQ[-\s]?\d{3,4}p)", heading, re.IGNORECASE)
         if hq_match:
             quality = hq_match.group(1)
+
+    if season_info:
+        quality = f"{season_info} {quality}".strip()
 
     return quality, size

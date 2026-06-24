@@ -18,6 +18,7 @@ class MovieItem(scrapy.Item):
 
     title = scrapy.Field()           # Clean movie name, e.g. "Mortal Kombat II"
     year = scrapy.Field()            # e.g. "2026"
+    season = scrapy.Field()          # e.g. "Season 1"
     page_url = scrapy.Field()        # Full VegaMovies URL for this movie
     poster_url = scrapy.Field()      # Poster image URL (if found)
     categories = scrapy.Field()      # List of category strings

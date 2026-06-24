@@ -51,6 +51,45 @@ class SQLitePipeline:
                 self.items_count,
                 self.links_count,
             )
+            self._update_progress_file(spider, status="COMPLETED")
+
+    def _update_progress_file(self, spider, status="RUNNING"):
+        progress_file = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "crawler_progress.json",
+        )
+        data = {}
+        if os.path.exists(progress_file):
+            try:
+                with open(progress_file, "r") as f:
+                    data = json.load(f)
+            except Exception:
+                pass
+        
+        total_movies = 0
+        total_links = 0
+        if getattr(self, "conn", None):
+            try:
+                cur = self.conn.cursor()
+                total_movies = cur.execute("SELECT COUNT(*) FROM movies").fetchone()[0]
+                total_links = cur.execute("SELECT COUNT(*) FROM download_links").fetchone()[0]
+            except Exception:
+                pass
+
+        data[spider.name] = {
+            "status": status,
+            "session_movies_crawled": self.items_count,
+            "session_links_found": self.links_count,
+            "total_movies_in_db": total_movies,
+            "total_links_in_db": total_links,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        try:
+            with open(progress_file, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            log.error("Failed to write progress file: %s", e)
 
     # ── Table creation ───────────────────────────────────────────
 
@@ -63,23 +102,43 @@ class SQLitePipeline:
                 title TEXT NOT NULL,
                 title_normalized TEXT NOT NULL,
                 year TEXT DEFAULT '',
+                season TEXT DEFAULT '',
                 page_url TEXT UNIQUE NOT NULL,
                 poster_url TEXT DEFAULT '',
                 categories TEXT DEFAULT '[]',
+                tmdb_id INTEGER DEFAULT NULL,
                 scraped_at TEXT NOT NULL
             )
         """)
+
+        # Migration: add season and tmdb_id columns if they don't exist
+        try:
+            cur.execute("ALTER TABLE movies ADD COLUMN season TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+            
+        try:
+            cur.execute("ALTER TABLE movies ADD COLUMN tmdb_id INTEGER DEFAULT NULL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
         cur.execute("""
             CREATE TABLE IF NOT EXISTS download_links (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+                provider TEXT DEFAULT 'Unknown',
                 quality TEXT DEFAULT '',
                 size TEXT DEFAULT '',
                 url TEXT NOT NULL,
                 UNIQUE(movie_id, url)
             )
         """)
+
+        # Migration: add provider column to download_links if it doesn't exist
+        try:
+            cur.execute("ALTER TABLE download_links ADD COLUMN provider TEXT DEFAULT 'Unknown'")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
         # FTS5 virtual table for fuzzy title search
         cur.execute("""
@@ -117,6 +176,7 @@ class SQLitePipeline:
 
         title_norm = normalize_title(title)
         year = item.get("year", "")
+        season = item.get("season", "")
         page_url = item.get("page_url", "")
         poster_url = item.get("poster_url", "")
         categories = json.dumps(item.get("categories", []))
@@ -126,37 +186,38 @@ class SQLitePipeline:
         try:
             cur.execute(
                 """
-                INSERT INTO movies (title, title_normalized, year, page_url, poster_url, categories, scraped_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO movies (title, title_normalized, year, season, page_url, poster_url, categories, scraped_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(page_url) DO UPDATE SET
                     title = excluded.title,
                     title_normalized = excluded.title_normalized,
                     year = excluded.year,
+                    season = excluded.season,
                     poster_url = excluded.poster_url,
                     categories = excluded.categories,
                     scraped_at = excluded.scraped_at
+                RETURNING id
                 """,
-                (title, title_norm, year, page_url, poster_url, categories, now),
+                (title, title_norm, year, season, page_url, poster_url, categories, now),
             )
-            movie_id = cur.lastrowid
-
-            # If it was an update, fetch the existing ID
-            if movie_id == 0:
-                row = cur.execute(
-                    "SELECT id FROM movies WHERE page_url = ?", (page_url,)
-                ).fetchone()
-                movie_id = row[0] if row else None
+            row = cur.fetchone()
+            movie_id = row[0] if row else None
 
             if movie_id and download_links:
                 for link in download_links:
                     try:
                         cur.execute(
                             """
-                            INSERT OR IGNORE INTO download_links (movie_id, quality, size, url)
-                            VALUES (?, ?, ?, ?)
+                            INSERT INTO download_links (movie_id, provider, quality, size, url)
+                            VALUES (?, ?, ?, ?, ?)
+                            ON CONFLICT(movie_id, url) DO UPDATE SET
+                                provider = excluded.provider,
+                                quality = excluded.quality,
+                                size = excluded.size
                             """,
                             (
                                 movie_id,
+                                link.get("provider", "Unknown"),
                                 link.get("quality", ""),
                                 link.get("size", ""),
                                 link.get("url", ""),
@@ -168,6 +229,9 @@ class SQLitePipeline:
 
             self.conn.commit()
             self.items_count += 1
+            
+            if self.items_count % 50 == 0:
+                self._update_progress_file(spider, status="RUNNING")
 
         except sqlite3.Error as exc:
             log.error("Failed to store movie '%s': %s", title, exc)

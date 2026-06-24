@@ -58,7 +58,7 @@ def run_spider(max_pages: int = 0):
                 cwd=api_dir,
                 capture_output=True,
                 text=True,
-                timeout=3600,  # 1 hour max
+                timeout=172800,  # 48 hours max
                 env={**os.environ, "SCRAPY_SETTINGS_MODULE": "scraper.settings"},
             )
 
